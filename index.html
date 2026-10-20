@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Jet Fighter</title>
+<style>
+html,body{margin:0;height:100%;background:#000;overflow:hidden;touch-action:none}
+canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c'),g=c.getContext('2d');
+let W,H;
+function rs(){W=c.width=innerWidth;H=c.height=innerHeight}
+rs();addEventListener('resize',rs);
+let p,bs,es,ss,score,lives,over,fire=0,spawn=0,keys={};
+function init(){
+  p={x:W/2,y:H-120,tx:W/2,ty:H-120};
+  bs=[];es=[];ss=[];
+  for(let i=0;i<70;i++)ss.push({x:Math.random()*W,y:Math.random()*H,s:Math.random()*2+1});
+  score=0;lives=3;over=false;
+}
+init();
+function pt(e){
+  const q=e.touches?e.touches[0]:e;
+  p.tx=q.clientX;p.ty=q.clientY-70;
+}
+c.addEventListener('touchstart',e=>{if(over)init();pt(e)});
+c.addEventListener('touchmove',e=>{e.preventDefault();pt(e)},{passive:false});
+c.addEventListener('mousemove',pt);
+c.addEventListener('mousedown',()=>{if(over)init()});
+addEventListener('keydown',e=>keys[e.key]=1);
+addEventListener('keyup',e=>keys[e.key]=0);
+
+function update(){
+  if(keys.ArrowLeft)p.tx-=9;
+  if(keys.ArrowRight)p.tx+=9;
+  if(keys.ArrowUp)p.ty-=9;
+  if(keys.ArrowDown)p.ty+=9;
+  p.tx=Math.max(20,Math.min(W-20,p.tx));
+  p.ty=Math.max(40,Math.min(H-30,p.ty));
+  p.x+=(p.tx-p.x)*.25;
+  p.y+=(p.ty-p.y)*.25;
+  if(++fire>10){fire=0;bs.push({x:p.x,y:p.y-26})}
+  if(++spawn>Math.max(18,55-score/8)){
+    spawn=0;
+    es.push({x:30+Math.random()*(W-60),y:-30,v:2+Math.random()*2+score/150});
+  }
+  bs.forEach(b=>b.y-=11);
+  es.forEach(e=>e.y+=e.v);
+  for(const e of es){
+    for(const b of bs){
+      if(!e.dead&&!b.dead&&Math.abs(e.x-b.x)<24&&Math.abs(e.y-b.y)<24){
+        e.dead=b.dead=1;score+=10;
+      }
+    }
+    if(!e.dead&&Math.abs(e.x-p.x)<26&&Math.abs(e.y-p.y)<26){
+      e.dead=1;lives--;
+      if(lives<=0)over=true;
+    }
+  }
+  bs=bs.filter(b=>!b.dead&&b.y>-20);
+  es=es.filter(e=>!e.dead&&e.y<H+40);
+}
+
+function jet(x,y,col,down){
+  g.save();g.translate(x,y);
+  if(down)g.scale(1,-1);
+  g.fillStyle=col;
+  g.beginPath();
+  g.moveTo(0,-28);g.lineTo(8,-4);g.lineTo(28,16);g.lineTo(8,12);
+  g.lineTo(5,24);g.lineTo(-5,24);g.lineTo(-8,12);g.lineTo(-28,16);g.lineTo(-8,-4);
+  g.closePath();g.fill();
+  g.fillStyle='#fff';
+  g.beginPath();g.ellipse(0,-6,4,8,0,0,7);g.fill();
+  g.restore();
+}
+
+function draw(){
+  g.fillStyle='#050a1f';g.fillRect(0,0,W,H);
+  g.fillStyle='#fff';
+  ss.forEach(s=>{
+    s.y+=s.s;if(s.y>H){s.y=0;s.x=Math.random()*W}
+    g.fillRect(s.x,s.y,s.s,s.s);
+  });
+  bs.forEach(b=>{g.fillStyle='#ff0';g.fillRect(b.x-2,b.y,4,14)});
+  es.forEach(e=>jet(e.x,e.y,'#e33',true));
+  if(!over)jet(p.x,p.y,'#3cf',false);
+  g.fillStyle='#fff';g.font='bold 20px sans-serif';g.textAlign='left';
+  g.fillText('Score: '+score,12,28);
+  g.textAlign='right';
+  g.fillText('Lives: '+'♥'.repeat(Math.max(lives,0)),W-12,28);
+  if(over){
+    g.textAlign='center';
+    g.font='bold 40px sans-serif';g.fillText('GAME OVER',W/2,H/2-10);
+    g.font='20px sans-serif';g.fillText('Tap karke dubara khelo',W/2,H/2+30);
+  }
+}
+
+function loop(){
+  if(!over)update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+  </html>
